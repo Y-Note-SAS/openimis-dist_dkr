@@ -4,7 +4,7 @@ x-api: &default-api
     context: ../openimis-be_py/
     args:
       OPENIMIS_CONF_JSON: ${OPENIMIS_BE_CONF_JSON}
-  image: openimis/backend:${PROJECT_NAME:-local}
+  image: openimis/backend:csu-test
   volumes:
     - ../openimis-be_py:/openimis-be
     - ../openimis-be-core_py:/openimis-be-core_py
@@ -35,7 +35,7 @@ x-api: &default-api
 services:
   backend:
     <<: *default-api
-    container_name: ${PROJECT_NAME:-openimis}-backend-test
+    container_name: csu-test-backend
     command: start
     networks:
       openimis-net:
@@ -44,13 +44,13 @@ services:
       - ${HTTP_PORT:-8001}:8000
   worker:
     <<: *default-api
-    container_name: ${PROJECT_NAME:-openimis}-worker
+    container_name: csu-test-worker
     command: worker
     networks:
       openimis-net:
         ipv4_address: 172.20.${IP_SUB:-20}.14
   rabbitmq:
-    container_name: ${PROJECT_NAME:-openimis}-rabbitmq
+    container_name: csu-test-rabbitmq
     image: rabbitmq:3-management
     # restart: always
     networks:
@@ -133,7 +133,7 @@ services:
   #       ipv4_address: 172.20.${IP_SUB:-20}.16
 networks:
   openimis-net:
-    name: ${PROJECT_NAME}-openimis-net
+    name: csu-test-openimis-net
     ipam:
       config:
         - subnet: 172.20.${IP_SUB:-20}.0/24
