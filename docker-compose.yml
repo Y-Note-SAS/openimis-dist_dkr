@@ -1,5 +1,5 @@
 version: "2.4"
-x-api: &default-api-test
+x-api-test: &default-api-test
   build:
     context: ../openimis-be_py/
     args:
