@@ -1,5 +1,5 @@
 version: "2.4"
-x-api: &default-api
+x-api: &default-api-test
   build:
     context: ../openimis-be_py/
     args:
@@ -34,7 +34,7 @@ x-api: &default-api
 
 services:
   backend:
-    <<: *default-api
+    <<: *default-api-test
     container_name: csu-test-backend
     command: start
     networks:
@@ -43,7 +43,7 @@ services:
     ports:
       - ${HTTP_PORT:-8001}:8000
   worker:
-    <<: *default-api
+    <<: *default-api-test
     container_name: csu-test-worker
     command: worker
     networks:
