@@ -4,7 +4,8 @@ x-api: &default-api
     context: ../openimis-be_py/
     args:
       OPENIMIS_CONF_JSON: ${OPENIMIS_BE_CONF_JSON}
-  image: openimis/backend:${PROJECT_NAME:-local}
+  # image: openimis/backend:${PROJECT_NAME:-local}
+  image: openimis/backend:csu-dev
   volumes:
     - ../openimis-be_py:/openimis-be
     - ../openimis-be-core_py:/openimis-be-core_py
@@ -65,7 +66,8 @@ services:
   #     - 1433:1433
   backend:
     <<: *default-api
-    container_name: ${PROJECT_NAME:-openimis}-backend
+    # container_name: ${PROJECT_NAME:-openimis}-backend
+    container_name: csu-dev-backend
     # build:
     #   context: ../openimis-be_py/
     #   args:
@@ -106,13 +108,15 @@ services:
       - ${HTTP_PORT:-8000}:8000
   worker:
     <<: *default-api
-    container_name: ${PROJECT_NAME:-openimis}-worker
+    # container_name: ${PROJECT_NAME:-openimis}-worker
+    container_name: csu-dev-worker
     command: worker
     networks:
       openimis-net:
         ipv4_address: 172.20.${IP_SUB:-20}.13
   rabbitmq:
-    container_name: ${PROJECT_NAME:-openimis}-rabbitmq
+    # container_name: ${PROJECT_NAME:-openimis}-rabbitmq
+    container_name: csu-dev-rabbitmq
     image: rabbitmq:3-management
     # restart: always
     networks:
@@ -196,7 +200,8 @@ services:
   #       ipv4_address: 172.20.${IP_SUB:-20}.16
 networks:
   openimis-net:
-    name: ${PROJECT_NAME}-openimis-net
+    # name: ${PROJECT_NAME}-openimis-net
+    name: csu-dev-openimis-net
     ipam:
       config:
         - subnet: 172.20.${IP_SUB:-20}.0/24
