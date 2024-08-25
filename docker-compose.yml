@@ -1,5 +1,4 @@
 version: "2.4"
-name: csu-dev
 x-api: &default-api
   build:
     context: ../openimis-be_py/
