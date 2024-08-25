@@ -103,7 +103,7 @@ services:
     #   - CELERY_BROKER_URL=amqp://rabbitmq
     networks:
       openimis-net:
-         ipv4_address: 172.20.${IP_SUB:-20}.12
+         ipv4_address: 172.20.${IP_SUB:-20}.16
     ports:
       - ${HTTP_PORT:-8000}:8000
   worker:
@@ -113,7 +113,7 @@ services:
     command: worker
     networks:
       openimis-net:
-        ipv4_address: 172.20.${IP_SUB:-20}.13
+        ipv4_address: 172.20.${IP_SUB:-20}.17
   rabbitmq:
     # container_name: ${PROJECT_NAME:-openimis}-rabbitmq
     container_name: csu-dev-rabbitmq
@@ -121,7 +121,7 @@ services:
     # restart: always
     networks:
       openimis-net:
-        ipv4_address: 172.20.${IP_SUB:-20}.14
+        ipv4_address: 172.20.${IP_SUB:-20}.18
 
   #webservice:
   #  container_name: ${PROJECT_NAME:-openimis}-webservice
