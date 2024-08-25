@@ -22,7 +22,7 @@ x-api-test: &default-api-test
     - ../openimis-be-api_fhir_r4_py:/openimis-be-api_fhir_r4_py
     - ../openimis-be-tools_py:/openimis-be-tools_py
     - photos:/openimis-be/openIMIS/openIMISphone/
-  environment: &backend-env
+  environment: &backend-env-test
     - DB_HOST=${DB_HOST}
     - DB_PORT=${DB_PORT}
     - DB_NAME=${DB_NAME}
