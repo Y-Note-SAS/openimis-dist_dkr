@@ -64,6 +64,7 @@ services:
   #   ## may lead to security issue (depending on your network topology)
   #   ports:
   #     - 1433:1433
+  #   restart: always
   backend:
     <<: *default-api
     # container_name: ${PROJECT_NAME:-openimis}-backend
@@ -106,6 +107,7 @@ services:
          ipv4_address: 172.20.${IP_SUB:-20}.16
     ports:
       - ${HTTP_PORT:-8000}:8000
+    restart: always
   worker:
     <<: *default-api
     # container_name: ${PROJECT_NAME:-openimis}-worker
@@ -114,6 +116,7 @@ services:
     networks:
       openimis-net:
         ipv4_address: 172.20.${IP_SUB:-20}.17
+    restart: always
   rabbitmq:
     # container_name: ${PROJECT_NAME:-openimis}-rabbitmq
     container_name: csu-dev-rabbitmq
@@ -122,6 +125,7 @@ services:
     networks:
       openimis-net:
         ipv4_address: 172.20.${IP_SUB:-20}.18
+    restart: always
 
   #webservice:
   #  container_name: ${PROJECT_NAME:-openimis}-webservice
