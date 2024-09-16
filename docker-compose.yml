@@ -42,6 +42,7 @@ services:
          ipv4_address: 172.20.${IP_SUB:-20}.10
     ports:
       - ${HTTP_PORT:-8002}:8000
+    restart: always
   worker-prod:
     <<: *default-api-prod
     container_name: ${PROJECT_NAME:-csu}-worker-prod
@@ -49,6 +50,7 @@ services:
     networks:
       openimis-net:
         ipv4_address: 172.20.${IP_SUB:-20}.11
+    restart: always
   rabbitmq:
     container_name: ${PROJECT_NAME:-csu}-prod-rabbitmq
     image: rabbitmq:3-management
@@ -56,6 +58,7 @@ services:
     networks:
       openimis-net:
         ipv4_address: 172.20.${IP_SUB:-20}.13
+    restart: always
 networks:
   openimis-net:
     name: ${PROJECT_NAME}-openimis-net
