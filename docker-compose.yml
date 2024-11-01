@@ -21,6 +21,8 @@ x-api-prod: &default-api-prod
     - ../openimis-be-medical_py:/openimis-be-medical_py
     - ../openimis-be-api_fhir_r4_py:/openimis-be-api_fhir_r4_py
     - ../openimis-be-tools_py:/openimis-be-tools_py
+    - ./access.log:/access.log
+    - ./application.log:/application.log
     - photos:/openimis-be/openIMIS/openIMISphone/
   environment: &backend-env-prod
     - DB_HOST=${DB_HOST}
