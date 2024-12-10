@@ -1,2 +1,3 @@
 **/.env
 openimis_env/*
+mssql/*
