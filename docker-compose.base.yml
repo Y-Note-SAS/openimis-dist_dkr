@@ -1,5 +1,7 @@
 #version: "3.7"
 x-api: &default-api
+  build:
+    context: ../openimis-be_py/
   image: openimis/backend:csu-dev
   volumes:
     - ../openimis-be_py:/openimis-be
@@ -45,8 +47,7 @@ services:
   backend:
     <<: *default-api
     container_name: ${PROJECT_NAME:-openimis}-api
-    command: start      
-  
+    command: start_wsgi
   worker:
     <<: *default-api
     container_name: ${PROJECT_NAME:-openimis}-worker
@@ -58,9 +59,9 @@ services:
     networks:
       openimis-net:
 networks:
-  openimis-net:
+  openimis-net-dev:
     # name: ${PROJECT_NAME}-openimis-net
-    name: csu-dev-openimis-net
+    name: csu-{SERVER_ENV:-dev}-openimis-net
     ipam:
       config:
         - subnet: 172.20.${IP_SUB:-20}.0/24
