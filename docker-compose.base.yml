@@ -5,20 +5,11 @@ x-api: &default-api
   image: openimis/backend:csu-dev
   volumes:
     - ../openimis-be_py:/openimis-be
-    - ../openimis-be-core_py:/openimis-be-core_py
     - ../openimis-be-cs_py:/openimis-be-cs_py
     - ../openimis-be-csu_py:/openimis-be-csu_py
     - ../openimis-be-report-csu_py:/openimis-be-report-csu_py
     - ../openimis-be-report-cs_py:/openimis-be-report-cs_py
     - ../openimis-be-program_py:/openimis-be-program_py
-    - ../openimis-be-claim_py:/openimis-be-claim_py
-    - ../openimis-be-location_py:/openimis-be-location_py
-    - ../openimis-be-product_py:/openimis-be-product_py
-    - ../openimis-be-policy_py:/openimis-be-policy_py
-    - ../openimis-be-insuree_py:/openimis-be-insuree_py
-    - ../openimis-be-medical_py:/openimis-be-medical_py
-    - ../openimis-be-api_fhir_r4_py:/openimis-be-api_fhir_r4_py
-    - ../openimis-be-tools_py:/openimis-be-tools_py
     - ../openimis-be-idps_py:/openimis-be-idps_py
     - photos:/openimis-be/openIMIS/images/insurees
   environment:
@@ -31,16 +22,17 @@ x-api: &default-api
     - SITE_URL=${DOMAIN}
     - CELERY_BROKER_URL=amqp://rabbitmq
     - DB_ENGINE=${DB_ENGINE}
+    - DJANGO_LOG_LEVEL=${DJANGO_LOG_LEVEL:WARNING}
+    - DJANGO_LOG_HANDLER=${DJANGO_LOG_HANDLER:console}
+    - DJANGO_DB_LOG_HANDLER=${DJANGO_DB_LOG_HANDLER:db-queries}
+    - DEBUG=${DEBUG:-False}
+    - DJANGO_MIGRATE=${DJANGO_MIGRATE:-True}
+    - SCHEDULER_AUTOSTART=${SCHEDULER_AUTOSTART:-True}
     - MODE=${MODE:-Prod}
   volumes:
     - photos:/openimis-be/openIMIS/images/insurees
-  depends_on:
-    db:
-      condition: service_healthy
   networks:
-    openimis-net:
-  ports:
-      - ${HTTP_PORT:-8000}:8000
+    openimis-net-dev:
   restart: always
 
 services:
@@ -48,6 +40,8 @@ services:
     <<: *default-api
     container_name: ${PROJECT_NAME:-openimis}-api
     command: start_wsgi
+    ports:
+      - ${HTTP_PORT:-8000}:8000
   worker:
     <<: *default-api
     container_name: ${PROJECT_NAME:-openimis}-worker
@@ -57,7 +51,7 @@ services:
     image: rabbitmq:3-management
     restart: always
     networks:
-      openimis-net:
+      openimis-net-dev:
 networks:
   openimis-net-dev:
     # name: ${PROJECT_NAME}-openimis-net
