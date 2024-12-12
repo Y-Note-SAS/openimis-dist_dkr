@@ -10,7 +10,7 @@ x-api: &default-api
     - ../openimis-be-report-csu_py:/openimis-be-report-csu_py
     - ../openimis-be-report-cs_py:/openimis-be-report-cs_py
     - ../openimis-be-program_py:/openimis-be-program_py
-    - ../openimis-be-idps_py:/openimis-be-idps_py
+    #- ../openimis-be-idps_py:/openimis-be-idps_py
     - photos:/openimis-be/openIMIS/images/insurees
   environment:
     - DB_HOST=${DB_HOST}
