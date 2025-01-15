@@ -1,0 +1,82 @@
+#version: "3.7"
+x-api: &default-api
+  build:
+    context: ../openimis-be_py/
+  #image: openimis/backend:csu-dev
+  volumes:
+    - ../openimis-be_py:/openimis-be
+    - ../openimis-be-cs_py:/openimis-be-cs_py
+    - ../openimis-be-csu_py:/openimis-be-csu_py
+    - ../openimis-be-report-csu_py:/openimis-be-report-csu_py
+    - ../openimis-be-report-cs_py:/openimis-be-report-cs_py
+    - ../openimis-be-program_py:/openimis-be-program_py
+    #- ../openimis-be-idps_py:/openimis-be-idps_py
+    - photos:/openimis-be/openIMIS/images/insurees
+  environment:
+    - DB_HOST=${DB_HOST}
+    - DB_PORT=${DB_PORT}
+    - DB_NAME=${DB_NAME}
+    - DB_USER=${DB_USER}
+    - DB_PASSWORD=${DB_PASSWORD}
+    - SITE_ROOT=api
+    - SITE_URL=${DOMAIN}
+    - CELERY_BROKER_URL=amqp://rabbitmq
+    - DB_ENGINE=${DB_ENGINE}
+    - DJANGO_LOG_LEVEL=${DJANGO_LOG_LEVEL:-WARNING}
+    - DJANGO_LOG_HANDLER=${DJANGO_LOG_HANDLER:-console}
+    - DJANGO_DB_LOG_HANDLER=${DJANGO_DB_LOG_HANDLER:-db-queries}
+    - DEBUG=${DEBUG:-False}
+    - DJANGO_MIGRATE=${DJANGO_MIGRATE:-True}
+    - SCHEDULER_AUTOSTART=${SCHEDULER_AUTOSTART:-True}
+    - MODE=${MODE:-Prod}
+  networks:
+    openimis-net-dev:
+  restart: always
+
+services:
+  frontend:
+    build:
+      context: ../openimis-fe_js/
+    restart: always
+    environment:
+      - REACT_APP_API_URL=api
+      - NEW_OPENIMIS_HOST=${NEW_OPENIMIS_HOST}
+      - OPENIMIS_CONF_JSON=${OPENIMIS_FE_CONF_JSON}
+      - OPENSEARCH_BASIC_TOKEN=${OPENSEARCH_BASIC_TOKEN}
+    networks:
+      openimis-net-dev:
+    ports:
+      - ${HTTP_PORT:-80}:80
+      - ${HTTPS_PORT:-443}:443
+    depends_on:
+      - backend
+    volumes:
+      - ./data/certbot/conf:/etc/letsencrypt
+      - ./data/certbot/www:/var/www/certbot
+      # uncomment to use custom openimis.conf
+      - ./conf/nginx:/conf/
+  backend:
+    <<: *default-api
+    container_name: ${PROJECT_NAME:-openimis}-api
+    command: start_wsgi
+  worker:
+    <<: *default-api
+    container_name: ${PROJECT_NAME:-openimis}-worker
+    command: worker
+  rabbitmq:
+    container_name: ${PROJECT_NAME:-openimis}-rabbitmq
+    image: rabbitmq:3-management
+    restart: always
+    networks:
+      openimis-net-dev:
+networks:
+  openimis-net-dev:
+    # name: ${PROJECT_NAME}-openimis-net
+    name: csu-${SERVER_ENV:-dev}-openimis-net
+    ipam:
+      config:
+        - subnet: 172.100.${IP_SUB:-20}.0/24
+          ip_range: 172.100.${IP_SUB:-20}.0/24
+volumes:
+  database-csu:
+  photos:

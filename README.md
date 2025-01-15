@@ -1,48 +1,85 @@
 # openIMIS dockerized
 
- This repository provides a dockerized openIMIS (all components) as a quick setup for development, testing or demoing.
+ This repository provides a dockerized openIMIS (all components) as a quick setup , testing or demoing.
  
- Please look for the instructions on the openIMIS Wiki: https://openimis.atlassian.net/wiki/spaces/OP/pages/963182705/MO1.1+Install+the+modular+openIMIS+using+Docker
+
+ Please look for further instructions on the openIMIS Wiki: https://openimis.atlassian.net/wiki/spaces/OP/pages/963182705/MO1.1+Install+the+modular+openIMIS+using+Docker
+
  
- The docker-compose currently contains the openIMIS database, backend + worker, frontend, restapi and gateway components.
+ The docker-compose currently contains the openIMIS database, backend + worker, frontend, and third parties components (lightning, opensearch, rabitMQ ... ).
+
  
 
 In case of troubles, please consult/contact our service desk via our [ticketing site](https://openimis.atlassian.net/servicedesk/customer).
 
-#Prerequisit
+# Prerequisit
 - Docker installed
 
 
+# fast lane
+
+ You can use the script `deploy_openimis.sh`to initialize all components
+
 # First startup
 
-* create a `.env` file, use .env.example as starting point
+* create a `.env` file, use `.env.example` as starting point (respectivement for `.env.lightning`, `.env.openSearch`)
+* chose database vendor: the default is psql but you can edit the docker-compose.yml and change `docker-compose-psql.yml` to  `docker-compose-mssql.yml`
 
-## configure the restapi
- the rest api config files appsettings.json, appsettings.Production.json, appsetting.Developments.json must be created in the folder ./conf/restapi
- create the log folder ./logs
 
-## configure the gateway (optionnal)
-if you want to change the gateway config, you can uncomment the volume in the docker-compose:gateway and then edit ./conf/gateway/openimis.json
+## Configure the gateway (optionnal)
+  
+* uncomment the volume in the frontend config
+* make modification in openimis.conf
 
-## init database
-* If you use the demo docker 'db' service:
-  * choose the SQL script to create/restore the database. Reference models are provided in [database_ms_sqlserver](https://github.com/openimis/database_ms_sqlserver) github
-* build and start rest of the container (and backend) docker image: `docker-compose up -d`
-  * note: if the db is a container, it can take 90 sec to start the first time
-  * note: at each start, openIMIS will apply the necessary database migrations to update the database scheme
-* register your openIMIS superuser in the gateway:
-  * list running containers and spot the gateway: `docker container ls` (the gateway should be named `openimis-gateway`)
-  * connect to the gateway: `docker exec -it <CONTAINER ID> /bin/sh` (sh and not bash)
-  * you should be in /script directory, if not, just `cd /script`)
-  * in the gateway container, register your openIMIS superuser: `./add-user.sh <SUPERUSER_NAME> <SUPER_USER_PASSWORD>`
-  Notes:
-    * same procedure (add-user.sh) must be followed to add external applications accesses
-    * in `/script`, there are also `remove-user.sh`and `update-user.sh`
 
-# stop /start
-To stop all docker containers: `docker-compose stop`
-To (re-)start all docker containers: `docker-compose start` 
+## main database initialisation
 
-# rebuild 
-To rebuild `docker-compose up -d --build --force-recreate`
+Include the line INIT_MODE=demo in .env or uncomment it in case it has been copied from .env.example copied to intiate the database with the DEMO dataset, it will create an empty openIMIS database otherwise
+
+
+## OpenFN/Lightning setup ( manage social protection workflow/import )
+
+  * Copy `.env.lightning.example` to `.env.lightning` and make adjustments 
+  * Create `lightning_dev` database in db container 
+  * Run container build `docker compose -f docker-compose.lightning.yml --env-file .env.lightning --env-file .env build`
+  * Run migrations `docker compose -f docker-compose.yml -f docker-compose.lightning.yml run --rm lightning mix ecto.migrate`
+  * Run imis demo setup `docker compose -f docker-compose.yml -f docker-compose.lightning.yml run --rm lightning ./imisSetup.sh`
+  * Run service `docker compose -f docker compose.yml -f docker compose.lightning.yml up lightning`
+
+## OpenSearch/OpenSearch Dashboards setup 
+Both OpenSearch and OpenSearch Dashboards are not by default enabled in dockerized instance. To make them work it's required to: 
+  * Copy `.env.openSearch.example` to `.env.openSearch` and make adjustments
+  * Run container build `ddocker compose -f docker-compose.openSearch.yml --env-file .env.openSearch --env-file .env build`
+  * Run service `docker compose -f docker-compose.yml -f docker-compose.openSearch.yml up opensearch opensearch-dashboards nginx`
+This build provides also additional nginx proxy server in order to handle openSearch Dashboard application on frontend level. 
+
+To run on a Dockerized instance (database, backend, and frontend of openIMIS), please follow the steps below:
+  * Add a value for the OPENSEARCH_BASIC_TOKEN in the environment (env) file. This should be based on the admin and password credentials for openSearch.
+  * In the .env file in openimis-fe_js, use the following environment variable: `ENV OPENSEARCH_PROXY_ROOT="opensearch"`.
+  * Run the backend and frontend services.
+
+# Stop/Start
+
+To stop all docker containers: `docker compose  stop`
+To (re-)start all docker containers: `docker compose  start` 
+
+# Pull new images
+
+To pull new images or images update `docker compose pull` 
+
+# Create Let's Encrypt certificates
+
+Use the certbot docker compose file
+
+export DOMAIN first
+
+## Dry run 
+docker compose run --rm --entrypoint "  certbot certonly --webroot -w /var/www/certbot  --staging  --register-unsafely-without-email  -d  ${NEW_OPENIMIS_HOST}    --rsa-key-size 2048     --agree-tos     --force-renewal" certbot
+
+## dry run 
+docker-compose run --rm --entrypoint "  certbot certonly --webroot -w /var/www/certbot  --staging  --register-unsafely-without-email  -d  ${DOMAIN}    --rsa-key-size 2048     --agree-tos     --force-renewal" certbot
+
+## actual setup
+
+docker-compose run --rm --entrypoint "  certbot certonly --webroot -w /var/www/certbot    --register-unsafely-without-email  -d  ${DOMAIN}    --rsa-key-size 2048     --agree-tos     --force-renewal" certbot
 
