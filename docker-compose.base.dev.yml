@@ -104,7 +104,7 @@ services:
       SENTRY_SECRET_KEY: 'hMuRRIQR37WLMGzGyC3fCXUei5ff5Swy5qYmIAGEnbY='
       SENTRY_POSTGRES_HOST: postgres
       SENTRY_DB_USER: sentry
-      SENTRY_DB_PASSWORD: sentry
+      SENTRY_DB_PASSWORD: =E=QY]!{PjD53Mq
       SENTRY_REDIS_HOST: redis
     command: >
       bash -c "sleep 10 && 
@@ -125,7 +125,7 @@ services:
       SENTRY_SECRET_KEY: 'hMuRRIQR37WLMGzGyC3fCXUei5ff5Swy5qYmIAGEnbY='
       SENTRY_POSTGRES_HOST: postgres
       SENTRY_DB_USER: sentry
-      SENTRY_DB_PASSWORD: sentry
+      SENTRY_DB_PASSWORD: =E=QY]!{PjD53Mq
       SENTRY_REDIS_HOST: redis
     networks:
       openimis-net-dev:
