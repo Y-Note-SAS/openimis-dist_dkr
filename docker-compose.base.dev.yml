@@ -101,7 +101,7 @@ services:
     ports:
       - 9000:9000
     environment:
-      SENTRY_SECRET_KEY: '!!!SECRET!!!'
+      SENTRY_SECRET_KEY: 'hMuRRIQR37WLMGzGyC3fCXUei5ff5Swy5qYmIAGEnbY='
       SENTRY_POSTGRES_HOST: postgres
       SENTRY_DB_USER: sentry
       SENTRY_DB_PASSWORD: sentry
@@ -122,7 +122,7 @@ services:
       - postgres
     command: "sentry run cron"
     environment:
-      SENTRY_SECRET_KEY: '!!!SECRET!!!'
+      SENTRY_SECRET_KEY: 'hMuRRIQR37WLMGzGyC3fCXUei5ff5Swy5qYmIAGEnbY='
       SENTRY_POSTGRES_HOST: postgres
       SENTRY_DB_USER: sentry
       SENTRY_DB_PASSWORD: sentry
@@ -138,10 +138,10 @@ services:
       - postgres
     command: "sentry run worker"
     environment:
-      SENTRY_SECRET_KEY: '!!!SECRET!!!'
+      SENTRY_SECRET_KEY: 'hMuRRIQR37WLMGzGyC3fCXUei5ff5Swy5qYmIAGEnbY='
       SENTRY_POSTGRES_HOST: postgres
       SENTRY_DB_USER: sentry
-      SENTRY_DB_PASSWORD: sentry
+      SENTRY_DB_PASSWORD: =E=QY]!{PjD53Mq
       SENTRY_REDIS_HOST: redis
     networks:
       openimis-net-dev:
