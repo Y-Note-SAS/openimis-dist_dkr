@@ -72,6 +72,80 @@ services:
     restart: always
     networks:
       openimis-net-dev:
+
+  # Services Sentry
+  redis:
+    image: redis
+    platform: linux/amd64  # <-- Ajoutez cette ligne
+    networks:
+      openimis-net-dev:
+
+  postgres:
+    image: postgres
+    platform: linux/amd64  # <-- Ajoutez cette ligne
+    environment:
+      POSTGRES_USER: sentry
+      POSTGRES_PASSWORD: sentry
+      POSTGRES_DB: sentry
+    volumes:
+      - pgdb:/var/lib/postgresql/data
+    networks:
+      openimis-net-dev:
+
+  sentry:
+    image: sentry
+    platform: linux/amd64  # <-- Ajoutez cette ligne
+    links:
+      - redis
+      - postgres
+    ports:
+      - 9000:9000
+    environment:
+      SENTRY_SECRET_KEY: 'hMuRRIQR37WLMGzGyC3fCXUei5ff5Swy5qYmIAGEnbY='
+      SENTRY_POSTGRES_HOST: postgres
+      SENTRY_DB_USER: sentry
+      SENTRY_DB_PASSWORD: =E=QY]!{PjD53Mq
+      SENTRY_REDIS_HOST: redis
+    command: >
+      bash -c "sleep 10 && 
+      sentry upgrade --noinput && 
+      sentry createuser --superuser --email admin@example.com --password password && 
+      sentry run web"
+    networks:
+      openimis-net-dev:
+
+  cron:
+    image: sentry
+    platform: linux/amd64  # <-- Ajoutez cette ligne
+    links:
+      - redis
+      - postgres
+    command: "sentry run cron"
+    environment:
+      SENTRY_SECRET_KEY: 'hMuRRIQR37WLMGzGyC3fCXUei5ff5Swy5qYmIAGEnbY='
+      SENTRY_POSTGRES_HOST: postgres
+      SENTRY_DB_USER: sentry
+      SENTRY_DB_PASSWORD: =E=QY]!{PjD53Mq
+      SENTRY_REDIS_HOST: redis
+    networks:
+      openimis-net-dev:
+
+  sentry-worker:
+    image: sentry
+    platform: linux/amd64  # <-- Ajoutez cette ligne
+    links:
+      - redis
+      - postgres
+    command: "sentry run worker"
+    environment:
+      SENTRY_SECRET_KEY: 'hMuRRIQR37WLMGzGyC3fCXUei5ff5Swy5qYmIAGEnbY='
+      SENTRY_POSTGRES_HOST: postgres
+      SENTRY_DB_USER: sentry
+      SENTRY_DB_PASSWORD: =E=QY]!{PjD53Mq
+      SENTRY_REDIS_HOST: redis
+    networks:
+      openimis-net-dev:
+
 networks:
   openimis-net-dev:
     # name: ${PROJECT_NAME}-openimis-net
@@ -80,6 +154,8 @@ networks:
       config:
         - subnet: 172.100.${IP_SUB:-20}.0/24
           ip_range: 172.100.${IP_SUB:-20}.0/24
+
 volumes:
   database-csu:
   photos:
+  pgdb:
