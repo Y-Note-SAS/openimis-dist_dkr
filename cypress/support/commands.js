@@ -702,6 +702,16 @@ import {
   addExistingInsureeIntoFamily
 } from '../e2e/insuree.cy';
 
+import {
+  createNewClaim,
+  fillClaimForm,
+  goToClaimForm,
+  goToClaimsPage,
+  filterClaim,
+  addItemsToClaim,
+  addServicesToClaim
+} from '../e2e/claim.cy';
+
 Cypress.Commands.add('fillFamilyForm', fillFamilyForm);
 Cypress.Commands.add('fillInsureeForm', fillInsureeForm);
 Cypress.Commands.add('clickCreateInsuree', clickCreateInsuree);
@@ -714,3 +724,10 @@ Cypress.Commands.add('verifyInsureeExists', verifyInsureeExists);
 Cypress.Commands.add('goToFamilyOverview', goToFamilyOverview);
 Cypress.Commands.add('selectSearcherRow', selectSearcherRow);
 Cypress.Commands.add('addExistingInsureeIntoFamily', addExistingInsureeIntoFamily);
+Cypress.Commands.add('createNewClaim', createNewClaim);
+Cypress.Commands.add('fillClaimForm', fillClaimForm);
+Cypress.Commands.add('goToClaimForm', goToClaimForm);
+Cypress.Commands.add('goToClaimsPage', goToClaimsPage);
+Cypress.Commands.add('filterClaim', filterClaim);
+Cypress.Commands.add('addItemsToClaim', addItemsToClaim);
+Cypress.Commands.add('addServicesToClaim', addServicesToClaim);
