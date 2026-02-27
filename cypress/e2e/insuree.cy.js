@@ -1,5 +1,5 @@
 // Test data
-export const insurees = {
+const insurees = {
   head: {
     chfId: '697547030',
     givenNames: 'Sylvie',
@@ -12,7 +12,7 @@ export const insurees = {
     profession: 'Employee',
     education: 'University',
     typeOfId: 'Passport',
-    dobDay: '15'
+    dob: { day: '15', month: '02', year: '1990' },
   },
   member: {
     chfId: '692651197',
@@ -26,16 +26,17 @@ export const insurees = {
     profession: 'Employee',
     education: 'University',
     typeOfId: 'Passport',
-    dobDay: '18'
-  }
+    dob: { day: '18', month: '02', year: '1992' },
+    updatedDob: { day: '19', month: '02', year: '1992' },
+  },
 };
 
-export const familyData = {
+const familyData = {
   location: 'R1D1M1V1 Rachla',
   familyType: 'Household',
   confirmationNo: 'CONF-001',
   confirmationType: 'Municipality',
-  address: 'Douala, Cameroun'
+  address: 'Douala, Cameroun',
 };
 
 
@@ -69,7 +70,7 @@ const Insuree = {
     cy.enterMuiInput('Phone', insuree.phone);
     cy.enterMuiInput('Email', insuree.email);
 
-    cy.chooseMuiDatePicker('Birth Date', insuree.dobDay);
+    cy.chooseMuiDatePicker('Birth Date', insuree.dob);
     
     cy.chooseMuiSelect('Profession', insuree.profession);
     cy.chooseMuiSelect('Education', insuree.education);
@@ -87,17 +88,32 @@ const Insuree = {
     cy.contains(insuree.chfId);
   },
 
-  delete: (insuree) => {
+  delete: (insuree, options = {}) => {
+    const { failIfMissing = true } = options;
+
     Insuree.goToList();
     cy.enterMuiInput('Insurance No.', insuree.chfId, "input");
     cy.contains('button', 'Search').click();
     cy.scrollTo('right');
-    cy.contains('tr', insuree.chfId)
-      .within(() => {
-        cy.contains('button', 'Delete').click();
-      });
-    cy.contains('button', 'OK').click();
-  }
+
+    cy.get('body').then(($body) => {
+      const hasInsuree = $body.find('tr').toArray().some((row) => row.innerText.includes(insuree.chfId));
+
+      if (!hasInsuree) {
+        if (!failIfMissing) {
+          cy.log(`Insuree ${insuree.chfId} not found, skipping deletion`);
+          return;
+        }
+        throw new Error(`Insuree ${insuree.chfId} not found for deletion`);
+      }
+
+      cy.contains('tr', insuree.chfId)
+        .within(() => {
+          cy.contains('button', 'Delete').click();
+        });
+      cy.contains('button', 'OK').click();
+    });
+  },
 };
 
 
@@ -141,7 +157,7 @@ const Family = {
   addMember: (head, member) => {
     Family.goToForm(head);
     cy.contains('button', 'Add existing').click()
-    cy.contains('label', 'Insurance No.').type(member.chfId)
+    cy.enterMuiInput('Insurance No.', member.chfId, 'input');
     cy.openRow(member.chfId)
 
     cy.contains('button', 'Move and cancel policies').click();
@@ -156,21 +172,51 @@ const Family = {
     cy.contains('button', 'Remove and cancel policies').click();
   },
 
-  delete: (head) => {
+  delete: (head, options = {}) => {
+    const { failIfMissing = true } = options;
+
     Family.goToList();
     cy.enterMuiInput('Head Ins. No.', head.chfId, "input");
     cy.contains('button', 'Search').click();
     cy.scrollTo('right');
-    cy.contains('tr', head.chfId)
-      .within(() => {
-        cy.contains('button', 'Delete').click();
-      });
-    cy.contains('button', 'Delete family and members').click();
-  }
+
+    cy.get('body').then(($body) => {
+      const hasFamily = $body.find('tr').toArray().some((row) => row.innerText.includes(head.chfId));
+
+      if (!hasFamily) {
+        if (!failIfMissing) {
+          cy.log(`Family ${head.chfId} not found, skipping deletion`);
+          return;
+        }
+        throw new Error(`Family ${head.chfId} not found for deletion`);
+      }
+
+      cy.contains('tr', head.chfId)
+        .within(() => {
+          cy.contains('button', 'Delete').click();
+        });
+      cy.contains('button', 'Delete family and members').click();
+    });
+  },
+};
+
+const ensureLoggedIn = () => {
+  cy.visit('/front');
+  cy.get('body').then(($body) => {
+    if ($body.find('input[type="password"]').length > 0 || $body.text().includes('Log In')) {
+      cy.login();
+    }
+  });
 };
 
 // Tests
-describe.only('Family & Insuree Workflow', () => {
+describe('Family & Insuree Workflow', () => {
+  afterEach(() => {
+    ensureLoggedIn();
+    Family.delete(insurees.head, { failIfMissing: false });
+    Insuree.delete(insurees.member, { failIfMissing: false });
+    Insuree.delete(insurees.head, { failIfMissing: false });
+  });
 
   it('should execute complete flow cleanly', () => {
     cy.login();
@@ -192,7 +238,7 @@ describe.only('Family & Insuree Workflow', () => {
     Insuree.verifyExists(insurees.member);
     cy.openRow(insurees.member.chfId);
 
-    cy.chooseMuiDatePicker('Birth Date', insurees.member.dobDay);
+    cy.chooseMuiDatePicker('Birth Date', insurees.member.updatedDob);
 
     cy.save();
 
@@ -208,9 +254,6 @@ describe.only('Family & Insuree Workflow', () => {
     Family.addMember(insurees.head, insurees.member);
     Family.removeMember(insurees.head, insurees.member);
 
-    // Cleanup
-    Insuree.delete(insurees.member);
-    Family.delete(insurees.head);
-   });
+  });
 
 });

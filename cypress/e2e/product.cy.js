@@ -1,5 +1,5 @@
 // Test data
-export const product = {
+const product = {
   code: "PRD-001",
   name: "Produit Test Cypress",
   maxMembers: "10",
@@ -9,15 +9,15 @@ export const product = {
   recurrence: "1",
   ageMinimal: "18",
   ageMaximal: "65",
-  dateFrom: "27",
-  dateTo: "28",
+  dateFrom: { day: '27', month: '02', year: '2026' },
+  dateTo: { day: '28', month: '02', year: '2026' },
   services: [{ code: "OBG Cervical" }, {code: "OBG Cervix"}],
-  items: [{ code: "0001" }, { code: "0002" }]
+  items: [{ code: "0001" }, { code: "0002" }],
 };
 
-export const updatedProduct = {
+const updatedProduct = {
   name: "Produit Test Cypress Updated",
-  maxMembers: "20"
+  maxMembers: "20",
 };
 
 
@@ -116,23 +116,41 @@ const Product = {
     cy.contains(product.code);
   },
 
-  delete: (product) => {
+  delete: (product, options = {}) => {
+    const { failIfMissing = true } = options;
+
     Product.goToList();
     cy.enterMuiInput('Code', product.code, "input");
     cy.contains('button', 'Search').click({force: true});
 
-    cy.contains('tr', product.code)
-      .within(() => {
-        cy.contains('button', 'Delete').click();
-      });
+    cy.get('body').then(($body) => {
+      const hasProduct = $body.find('tr').toArray().some((row) => row.innerText.includes(product.code));
 
-    cy.contains('button', 'OK', {matchCase: false}).click();
-  }
+      if (!hasProduct) {
+        if (!failIfMissing) {
+          cy.log(`Product ${product.code} not found, skipping deletion`);
+          return;
+        }
+        throw new Error(`Product ${product.code} not found for deletion`);
+      }
+
+      cy.contains('tr', product.code)
+        .within(() => {
+          cy.contains('button', 'Delete').click();
+        });
+
+      cy.contains('button', 'OK', {matchCase: false}).click();
+    });
+  },
 
 };
 
 // Tests
-describe.only('Product Workflow', () => {
+describe('Product Workflow', () => {
+  afterEach(() => {
+    cy.login();
+    Product.delete(product, { failIfMissing: false });
+  });
 
   it('should execute complete product flow cleanly', () => {
 

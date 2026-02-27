@@ -7,13 +7,16 @@ const getTodayFormatted = () => {
 };
 
 Cypress.Commands.add('login', () => {
+  const loginFormTimeout = Number(Cypress.env('LOGIN_FORM_TIMEOUT')) || DEFAULT_LOGIN_FORM_TIMEOUT;
+
   cy.visit('/front');
-  cy.fixture('cred').then((cred) => {
-    cy.get('input[type="text"]', { timeout: 200000 }).type(cred.username) // helping timeout when initializing takes too long
-    cy.get('input[type="password"]').type(cred.password)
-    cy.get('button[type="submit"]').click()
-    cy.contains('Welcome Admin Admin!')
-  })
+
+    cy.fixture('cred').then((cred) => {
+      cy.get('input[type="text"]', { timeout: loginFormTimeout }).should('be.visible').type(cred.username)
+      cy.get('input[type="password"]').type(cred.password)
+      cy.get('button[type="submit"]').click()
+      cy.contains('Welcome Admin Admin!')
+    })
 })
 
 Cypress.Commands.add('logout', () => {
@@ -620,7 +623,6 @@ Cypress.Commands.add('chooseMuiSelect', (label, value) => {
 })
 
 Cypress.Commands.add('chooseMuiAutocomplete', (label, value) => {
-  // ------------------ FOCUS THE AUTOCOMPLETE FIELD ------------------
   cy.contains('label', label, { matchCase: false })
     .siblings('.MuiInputBase-root')
     .find('input')
@@ -628,12 +630,14 @@ Cypress.Commands.add('chooseMuiAutocomplete', (label, value) => {
     .clear()
     .type(value, { delay: 50 });
 
-  // ------------------ CLICK ON THE OPTION ------------------
   cy.get('body')
     .contains('li[role="option"], li[role="presentation"], [role="menu"] li', value, { timeout: 10000 })
     .should('be.visible')
     .click();
 });
+
+const yearView = "year view is open, switch to calendar view"
+const calendarView = "calendar view is open, switch to year view"
 
 Cypress.Commands.add('chooseMuiDatePicker', (label, day, month, year) => {
   cy.contains('label', label, { matchCase: false })
@@ -642,20 +646,23 @@ Cypress.Commands.add('chooseMuiDatePicker', (label, day, month, year) => {
     .first()
     .click();
 
-  cy.get('body')
     if (year) {
-      cy.get('[aria-label="calendar view is open, switch to year view"]')
+      cy.get('body')
+      .contains('li[role="option"]', year, { timeout: 10000 })
+      .should('be.visible')
+      .click({ force: true });
+      cy.get('[aria-label="' + calendarView + '"]')
       .should('be.visible')
       .click();
       cy.get('.MuiYearCalendar-button')
       .contains(year)
       .click();
-      cy.get('[aria-label="year view is open, switch to calendar view"]')
+      cy.get('[aria-label="' + yearView + '"]')
       .should('be.visible')
       .click();
     }
     if (month) {
-      cy.get('[aria-label="year view is open, switch to calendar view"]')
+      cy.get('[aria-label="' + yearView + '"]')
       .should('be.visible')
       .click();
       cy.get('.MuiYearCalendar-button')
@@ -680,6 +687,14 @@ Cypress.Commands.add('openRow', (value) => {
   cy.contains(value, { matchCase: false }).parents('tr').first().dblclick({force: true});
 });
 
+Cypress.Commands.add('clickButtonByText', (text, options = {}) => {
+  const { force = true } = options;
+
+  cy.contains('button', new RegExp(text, 'i'))
+    .should('be.visible')
+    .click({ force });
+});
+
 Cypress.Commands.add('assertMuiInput', (label, value, inputTag='input') => {
   cy.contains('label', label)
     .siblings('.MuiInputBase-root')
@@ -690,7 +705,12 @@ Cypress.Commands.add('assertMuiInput', (label, value, inputTag='input') => {
 
 Cypress.Commands.add('goToSubMenu', (menu, submenu) => {
   cy.contains(menu).click();
-  cy.contains('a', submenu).click();
+
+  if (typeof submenu === 'string' && submenu.startsWith('/')) {
+    cy.get(`a[href="${submenu}"]`).click();
+  } else {
+    cy.contains('a', submenu).click();
+  }
 });
 
 Cypress.Commands.add('assertMuiInputDisabled', (label, value=null, inputTag='input') => {

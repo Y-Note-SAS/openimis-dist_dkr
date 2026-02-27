@@ -1,30 +1,30 @@
 // Test data
-export const openIMISHeadInsuree = {
+const openIMISHeadInsuree = {
   chfId: '070707070',
   firstName: 'Joseph',
   lastName: 'Macintyre',
   gender: 'Male',
 };
 
-export const openIMISPolicy = {
+const openIMISPolicy = {
   product: {
     code: 'BCUL0001',
-    name: 'Basic Cover Ultha'
+    name: 'Basic Cover Ultha',
   },
-  value: 10000
-}
-export const policy = {
+  value: 10000,
+};
+const policy = {
   product: {
     code: 'FCUL0001',
-    name: 'Fixed Cycle Cover Ultha'
+    name: 'Fixed Cycle Cover Ultha',
   },
   officer: { code: 'Admin Admin' },
 };
 
-export const premium = {
+const premium = {
   amount: '250000',
   receiptNo: 'Receipt-0001',
-  paymentDate: '26',
+  paymentDate: { day: '26', month: '02', year: '2026' },
   payer: 'Coffee Farmers Association',
   paymentType: 'Cash',
 };
@@ -38,12 +38,27 @@ const Policy = {
       .invoke('val');
   },
 
-  goToFamilyForm: (head) => {
+  goToFamilyForm: (head, options = {}) => {
+    const { failIfMissing = true } = options;
+
     cy.goToSubMenu('Insurees and Policies', 'Families/Group');
     cy.enterMuiInput('Head Ins. No.', head.chfId, "input");
     cy.scrollTo('right');
     cy.contains('button', 'Search').click({ force: true });
-    cy.openRow(head.chfId);
+    return cy.get('body').then(($body) => {
+      const hasFamily = $body.find('tr').toArray().some((row) => row.innerText.includes(head.chfId));
+
+      if (!hasFamily) {
+        if (!failIfMissing) {
+          cy.log(`Family ${head.chfId} not found, skipping action`);
+          return false;
+        }
+        throw new Error(`Family ${head.chfId} not found`);
+      }
+
+      cy.openRow(head.chfId);
+      return true;
+    });
   },
 
   add: (head, policy) => {
@@ -104,31 +119,87 @@ const Policy = {
     });
   },
 
-  deletePremium: (head, policy, premium) => {
-    Policy.goToFamilyForm(head);
-    Policy.select(policy);
+  deletePremium: (head, policy, premium, options = {}) => {
+    const { failIfMissing = true } = options;
 
-    cy.contains('tr', premium.receiptNo)
-      .within(() => {
-        cy.contains('button', 'Delete').click({force: true});
+    Policy.goToFamilyForm(head, { failIfMissing }).then((familyOpened) => {
+      if (!familyOpened) {
+        return;
+      }
+
+      cy.get('body').then(($body) => {
+        const hasPolicy = $body.find('tr').toArray().some((row) => row.innerText.includes(policy.product.code));
+
+        if (!hasPolicy) {
+          if (!failIfMissing) {
+            cy.log(`Policy ${policy.product.code} not found, skipping premium deletion`);
+            return;
+          }
+          throw new Error(`Policy ${policy.product.code} not found for premium deletion`);
+        }
+
+        Policy.select(policy);
+
+        cy.get('body').then(($policyBody) => {
+          const hasPremium = $policyBody.find('tr').toArray().some((row) => row.innerText.includes(premium.receiptNo));
+
+          if (!hasPremium) {
+            if (!failIfMissing) {
+              cy.log(`Premium ${premium.receiptNo} not found, skipping deletion`);
+              return;
+            }
+            throw new Error(`Premium ${premium.receiptNo} not found for deletion`);
+          }
+
+          cy.contains('tr', premium.receiptNo)
+            .within(() => {
+              cy.contains('button', 'Delete').click({ force: true });
+            });
+          cy.contains('button', 'Yes').click();
+        });
       });
-    cy.contains('button', 'Yes').click();
+    });
   },
 
-  delete: (head, policy) => {
-    Policy.goToFamilyForm(head);
-    Policy.select(policy);
+  delete: (head, policy, options = {}) => {
+    const { failIfMissing = true } = options;
 
-    cy.contains('tr', policy.product.code)
-      .within(() => {
-        cy.contains('button', 'Delete').click({force: true});
+    Policy.goToFamilyForm(head, { failIfMissing }).then((familyOpened) => {
+      if (!familyOpened) {
+        return;
+      }
+
+      cy.get('body').then(($body) => {
+        const hasPolicy = $body.find('tr').toArray().some((row) => row.innerText.includes(policy.product.code));
+
+        if (!hasPolicy) {
+          if (!failIfMissing) {
+            cy.log(`Policy ${policy.product.code} not found, skipping deletion`);
+            return;
+          }
+          throw new Error(`Policy ${policy.product.code} not found for deletion`);
+        }
+
+        Policy.select(policy);
+
+        cy.contains('tr', policy.product.code)
+          .within(() => {
+            cy.contains('button', 'Delete').click({ force: true });
+          });
+        cy.contains('button', 'Ok').click();
       });
-    cy.contains('button', 'Ok').click();
-  }
+    });
+  },
 };
 
 // Tests
 describe('Policy Workflow', () => {
+  afterEach(() => {
+    cy.login();
+    Policy.deletePremium(openIMISHeadInsuree, openIMISPolicy, premium, { failIfMissing: false });
+    Policy.delete(openIMISHeadInsuree, openIMISPolicy, { failIfMissing: false });
+    Policy.delete(openIMISHeadInsuree, policy, { failIfMissing: false });
+  });
 
   it('should add, pay and delete a policy cleanly', () => {
 

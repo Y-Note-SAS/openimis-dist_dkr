@@ -1,5 +1,5 @@
 // Test data
-export const claim = {
+const claim = {
   insureeChfId: '070707055',
   visitType: 'O',
   careType: 'IPD',
@@ -9,8 +9,10 @@ export const claim = {
   claimPatientCondition: 'H',
   admin: 'Admin Admin',
   hFCode: 'JMHOS001',
+  visitDateFrom: { day: '10', month: '02', year: '2026' },
+  visitDateTo: { day: '15', month: '02', year: '2026' },
   services: [{ code: 'I117' }, { code: 'I125' }],
-  items: [{ code: '0002' }, { code: '0011' }]
+  items: [{ code: '0002' }, { code: '0011' }],
 };
 
 const Claim = {
@@ -41,8 +43,8 @@ const Claim = {
 
     cy.enterMuiInput('Insurance No.', claim.insureeChfId, "input");
 
-    cy.chooseMuiDatePicker('Visit Date From', '10');
-    cy.chooseMuiDatePicker('Visit Date To', '15');
+    cy.chooseMuiDatePicker('Visit Date From', claim.visitDateFrom);
+    cy.chooseMuiDatePicker('Visit Date To', claim.visitDateTo);
 
     cy.chooseMuiSelect('In/out-patient', claim.visitType);
 
