@@ -639,37 +639,46 @@ Cypress.Commands.add('chooseMuiAutocomplete', (label, value) => {
 const yearView = "year view is open, switch to calendar view"
 const calendarView = "calendar view is open, switch to year view"
 
-Cypress.Commands.add('chooseMuiDatePicker', (label, day, month, year) => {
+Cypress.Commands.add('chooseMuiDatePicker', (label, dateOrDay, month, year) => {
+  // Support both chooseMuiDatePicker(label, day, month, year)
+  // and chooseMuiDatePicker(label, { day, month, year })
+  let day;
+  if (dateOrDay && typeof dateOrDay === 'object') {
+    ({ day, month, year } = dateOrDay);
+  } else {
+    day = dateOrDay;
+  }
+
   cy.contains('label', label, { matchCase: false })
     .siblings('.MuiPickersInputBase-root')
     .find('button')
     .first()
     .click();
 
-    if (year) {
-      cy.get('body')
+  if (year) {
+    cy.get('body')
       .contains('li[role="option"]', year, { timeout: 10000 })
       .should('be.visible')
       .click({ force: true });
-      cy.get('[aria-label="' + calendarView + '"]')
+    cy.get('[aria-label="' + calendarView + '"]')
       .should('be.visible')
       .click();
-      cy.get('.MuiYearCalendar-button')
+    cy.get('.MuiYearCalendar-button')
       .contains(year)
       .click();
-      cy.get('[aria-label="' + yearView + '"]')
+    cy.get('[aria-label="' + yearView + '"]')
       .should('be.visible')
       .click();
-    }
-    if (month) {
-      cy.get('[aria-label="' + yearView + '"]')
+  }
+  if (month) {
+    cy.get('[aria-label="' + yearView + '"]')
       .should('be.visible')
       .click();
-      cy.get('.MuiYearCalendar-button')
+    cy.get('.MuiYearCalendar-button')
       .contains(month)
       .click();
-    }
-    cy.get('[role="gridcell"]')
+  }
+  cy.get('[role="gridcell"]')
     .contains(day)
     .should('be.visible')
     .click();
@@ -688,9 +697,9 @@ Cypress.Commands.add('openRow', (value) => {
 });
 
 Cypress.Commands.add('clickButtonByText', (text, options = {}) => {
-  const { force = true } = options;
+  const { force = true, ...containsOptions } = options;
 
-  cy.contains('button', new RegExp(text, 'i'))
+  cy.contains('button', text, { matchCase: false, ...containsOptions })
     .should('be.visible')
     .click({ force });
 });

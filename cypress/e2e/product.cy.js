@@ -50,7 +50,7 @@ const Product = {
     cy.enterMuiInput('Insurance period', product.insurancePeriod);
     cy.enterMuiInput('Administration period', product.administrationPeriod);
     cy.enterMuiInput('Recurrence', product.recurrence);
-    cy.enterMuiInput('Maximum Age', product.ageMinimal);
+    cy.enterMuiInput('Minimum Age', product.ageMinimal);
     cy.enterMuiInput('Maximum Age', product.ageMaximal);
     cy.chooseMuiSelect('Region', 'R1 Region 1');
     cy.chooseMuiSelect('District', 'R1D2 Jambero');
@@ -106,7 +106,7 @@ const Product = {
         .click({ force: true });
     });
 
-    cy.contains('button', `Add ${services.length} items`, {matchCase: false}).click();
+    cy.contains('button', `Add ${services.length} services`, {matchCase: false}).click();
   },
 
   verifyExists: (product) => {
