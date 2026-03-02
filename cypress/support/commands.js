@@ -6,6 +6,7 @@ const getTodayFormatted = () => {
   return `${day}-${month}-${year}`;
 };
 
+DEFAULT_LOGIN_FORM_TIMEOUT = 20000
 Cypress.Commands.add('login', () => {
   const loginFormTimeout = Number(Cypress.env('LOGIN_FORM_TIMEOUT')) || DEFAULT_LOGIN_FORM_TIMEOUT;
 
@@ -649,37 +650,64 @@ Cypress.Commands.add('chooseMuiDatePicker', (label, dateOrDay, month, year) => {
     day = dateOrDay;
   }
 
+  // Normalize inputs so that selectors always receive primitive values.
+  let normalizedDay = day;
+  let normalizedMonth = month;
+  let normalizedYear = year;
+
+  if (day && typeof day === 'object') {
+    if (day instanceof Date) {
+      normalizedDay = day.getDate();
+      normalizedMonth = day.getMonth() + 1;
+      normalizedYear = day.getFullYear();
+    } else {
+      // Support plain objects like { day, month, year } if used.
+      if (Object.prototype.hasOwnProperty.call(day, 'day')) {
+        normalizedDay = day.day;
+      }
+      if (Object.prototype.hasOwnProperty.call(day, 'month')) {
+        normalizedMonth = day.month;
+      }
+      if (Object.prototype.hasOwnProperty.call(day, 'year')) {
+        normalizedYear = day.year;
+      }
+    }
+  }
+
   cy.contains('label', label, { matchCase: false })
     .siblings('.MuiPickersInputBase-root')
     .find('button')
     .first()
     .click();
 
-  if (year) {
-    cy.get('body')
-      .contains('li[role="option"]', year, { timeout: 10000 })
+    if (normalizedYear) {
+      const normalizedYearText = String(normalizedYear);
+      cy.get('body')
+      .contains('li[role="option"]', normalizedYearText, { timeout: 10000 })
       .should('be.visible')
       .click({ force: true });
-    cy.get('[aria-label="' + calendarView + '"]')
+      cy.get('[aria-label="' + calendarView + '"]')
       .should('be.visible')
       .click();
-    cy.get('.MuiYearCalendar-button')
-      .contains(year)
+      cy.get('.MuiYearCalendar-button')
+      .contains(normalizedYearText)
       .click();
-    cy.get('[aria-label="' + yearView + '"]')
+      cy.get('[aria-label="' + yearView + '"]')
       .should('be.visible')
       .click();
-  }
-  if (month) {
-    cy.get('[aria-label="' + yearView + '"]')
+    }
+    if (normalizedMonth) {
+      const normalizedMonthText = String(normalizedMonth);
+      cy.get('[aria-label="' + yearView + '"]')
       .should('be.visible')
       .click();
-    cy.get('.MuiYearCalendar-button')
-      .contains(month)
+      cy.get('.MuiYearCalendar-button')
+      .contains(normalizedMonthText)
       .click();
-  }
-  cy.get('[role="gridcell"]')
-    .contains(day)
+    }
+    const normalizedDayText = String(normalizedDay);
+    cy.get('[role="gridcell"]')
+    .contains(normalizedDayText)
     .should('be.visible')
     .click();
 })

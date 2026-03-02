@@ -4,7 +4,7 @@ const claim = {
   visitType: 'O',
   careType: 'IPD',
   diagnosis: 'A009',
-  code: 'CLM001',
+  code: `CLM${Date.now()}`,
   explanation: 'Test claim from Cypress',
   claimPatientCondition: 'H',
   admin: 'Admin Admin',
