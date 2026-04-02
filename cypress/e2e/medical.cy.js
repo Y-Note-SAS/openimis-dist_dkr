@@ -1,4 +1,4 @@
-// Test data
+// ------------------ TEST DATA ------------------
 const item = {
   code: '0002',
   name: 'Item Test Cypress',
@@ -26,192 +26,220 @@ const service = {
   patientCategory: 'CHILD',
 };
 
-
-// Items actions
-const Item = {
-
-  goToList: () =>
-    cy.goToSubMenu('Administration', '/front/medical/medicalItems'),
-
-  goToForm: (data) => {
-    Item.goToList();
-
-    if (data?.code) {
-      cy.enterMuiInput('Code', data.code, "input");
-      cy.contains('button', 'Search').click({force: true});
-      cy.openRow(data.code);
-    } else {
-      cy.get('[aria-label="Add a new medical item"]').find('button').click();
-    }
-  },
-
-  fillForm: (data) => {
-    cy.enterMuiInput('Code', data.code);
-    cy.enterMuiInput('Name', data.name);
-
-    cy.chooseMuiSelect('Item Type', data.type);
-
-    cy.enterMuiInput('Frequency (days)', data.frequency ?? '');
-    cy.enterMuiInput('Package', data.package ?? '');
-    cy.enterMuiInput('Quantity', data.quantity ?? '');
-    cy.enterMuiInput('Maximum Amount per Claim', data.maximumAmount ?? '');
-    cy.enterMuiInput('Price', data.price ?? '');
-
-    cy.chooseMuiSelect('Care Type', data.careType);
-  },
-
-  verifyExists: (data) => {
-    Item.goToList();
-
-    cy.enterMuiInput('Code', data.code, "input");
-    cy.contains('button', 'Search').click({force: true});
-
-    cy.contains(data.code);
-    cy.contains(data.name);
-  },
-
-  delete: (data, options = {}) => {
-    const { failIfMissing = true } = options;
-
-    Item.goToList();
-
-    cy.enterMuiInput('Code', data.code, "input");
-    cy.contains('button', 'Search').click({force: true});
-
-    cy.get('body').then(($body) => {
-      const hasItem = $body.find('tr').toArray().some((row) => row.innerText.includes(data.code));
-
-      if (!hasItem) {
-        if (!failIfMissing) {
-          cy.log(`Medical item ${data.code} not found, skipping deletion`);
-          return;
-        }
-        throw new Error(`Medical item ${data.code} not found for deletion`);
-      }
-
-      cy.contains('tr', data.code)
-        .within(() => {
-          cy.contains('button', 'Delete').click({force: true});
-        });
-
-      cy.contains('button', 'Yes', {matchCase: false}).click();
-    });
-  },
+// ------------------ ITEM ------------------
+const goToItemList = () => {
+  cy.goToSubMenu('Administration', '/front/medical/medicalItems');
 };
 
-
-// Services actions
-const Service = {
-
-  goToList: () =>
-    cy.goToSubMenu('Administration', '/front/medical/medicalServices'),
-
-  goToForm: (data) => {
-    Service.goToList();
-
-    if (data?.code) {
-      cy.enterMuiInput('Code', data.code, "input");
-      cy.contains('button', 'Search').click({force: true});
-      cy.openRow(data.code);
-    } else {
-      cy.get('[aria-label="Add a new medical service"]').find('button').click();
-    }
-  },
-
-  fillForm: (data) => {
-    cy.enterMuiInput('Code', data.code);
-    cy.enterMuiInput('Name', data.name);
-
-    cy.chooseMuiSelect('Type', data.packagetype);
-    cy.chooseMuiSelect('Service Type', data.type);
-    cy.chooseMuiSelect('Service Category', data.category);
-    cy.chooseMuiSelect('Service Level', data.level);
-
-    cy.enterMuiInput('Maximum Amount per Claim', data.maximumAmount ?? '');
-
-    if (data.manualPrice !== undefined) {
-      cy.enterMuiInput('Manual Price', data.manualPrice);
-    }
-
-    cy.enterMuiInput('Price', data.price ?? '');
-
-    cy.chooseMuiSelect('Care Type', data.careType);
-    cy.enterMuiInput('Frequency (days)', data.frequency ?? '');
-  },
-
-  verifyExists: (data) => {
-    Service.goToList();
-
-    cy.enterMuiInput('Code', data.code, "input");
-    cy.contains('button', 'Search').click({force: true});
-
-    cy.contains(data.code);
-    cy.contains(data.name);
-  },
-
-  delete: (data, options = {}) => {
-    const { failIfMissing = true } = options;
-
-    Service.goToList();
-
-    cy.enterMuiInput('Code', data.code, "input");
-    cy.contains('button', 'Search').click({force: true});
-
-    cy.get('body').then(($body) => {
-      const hasService = $body.find('tr').toArray().some((row) => row.innerText.includes(data.code));
-
-      if (!hasService) {
-        if (!failIfMissing) {
-          cy.log(`Medical service ${data.code} not found, skipping deletion`);
-          return;
-        }
-        throw new Error(`Medical service ${data.code} not found for deletion`);
-      }
-
-      cy.contains('tr', data.code)
-        .within(() => {
-          cy.contains('button', 'Delete').click({force: true});
-        });
-
-      cy.contains('button', 'Yes', {matchCase: false}).click();
-    });
-  },
+const goToNewItemForm = () => {
+  goToItemList();
+  cy.get('[aria-label="Add a new medical item"]').find('button').click();
 };
 
+const goToExistingItemForm = (data) => {
+  goToItemList();
 
-// Tests
+  cy.enterMuiInput('Code', data.code, 'input');
+  cy.contains('button', 'Search').click({ force: true });
+  cy.openRow(data.code);
+};
+
+const fillItemForm = (data) => {
+  cy.enterMuiInput('Code', data.code);
+  cy.enterMuiInput('Name', data.name);
+  cy.chooseMuiSelect('Item Type', data.type);
+  cy.enterMuiInput('Frequency (days)', data.frequency ?? '');
+  cy.enterMuiInput('Package', data.package ?? '');
+  cy.enterMuiInput('Quantity', data.quantity ?? '');
+  cy.enterMuiInput('Maximum Amount per Claim', data.maximumAmount ?? '');
+  cy.enterMuiInput('Price', data.price ?? '');
+  cy.chooseMuiSelect('Care Type', data.careType);
+};
+
+const verifyItemDetails = (data, updatedData = null) => {
+  data = updatedData ? { ...data, ...updatedData } : data;
+
+  goToExistingItemForm(data);
+
+  cy.verifyMuiInputValue('Code', data.code);
+  cy.verifyMuiInputValue('Name', data.name);
+  cy.verifyMuiSelectValue('Item Type', data.type);
+  cy.verifyMuiInputValue('Frequency (days)', data.frequency ?? '');
+  cy.verifyMuiInputValue('Package', data.package ?? '');
+  cy.verifyMuiInputValue('Quantity', data.quantity ?? '');
+  cy.verifyMuiInputValue('Maximum Amount per Claim', data.maximumAmount ?? '');
+  cy.verifyMuiInputValue('Price', data.price ?? '');
+  cy.verifyMuiSelectValue('Care Type', data.careType);
+};
+
+const verifyItemRemoved = (data) => {
+  goToItemList();
+
+  cy.enterMuiInput('Code', data.code, 'input');
+  cy.contains('button', 'Search').click({ force: true });
+
+  cy.get('body').then(($body) => {
+    const exists = $body.find('tr').toArray().some(row =>
+      row.innerText.includes(data.code)
+    );
+
+    expect(exists).to.be.false;
+  });
+};
+
+const deleteItem = (data, { failIfMissing = true } = {}) => {
+  goToItemList();
+
+  cy.enterMuiInput('Code', data.code, 'input');
+  cy.contains('button', 'Search').click({ force: true });
+
+  cy.get('body').then(($body) => {
+    const exists = $body.find('tr').toArray().some(row =>
+      row.innerText.includes(data.code)
+    );
+
+    if (!exists) {
+      if (!failIfMissing) return;
+      throw new Error(`Item ${data.code} not found`);
+    }
+
+    cy.contains('tr', data.code)
+      .within(() => cy.contains('button', 'Delete').click({ force: true }));
+
+    cy.contains('button', 'Yes', { matchCase: false }).click();
+  });
+};
+
+// ------------------ SERVICE ------------------
+const goToServiceList = () => {
+  cy.goToSubMenu('Administration', '/front/medical/medicalServices');
+};
+
+const goToNewServiceForm = () => {
+  goToServiceList();
+  cy.get('[aria-label="Add a new medical service"]').find('button').click();
+};
+
+const goToExistingServiceForm = (data) => {
+  goToServiceList();
+
+  cy.enterMuiInput('Code', data.code, 'input');
+  cy.contains('button', 'Search').click({ force: true });
+  cy.openRow(data.code);
+};
+
+const fillServiceForm = (data) => {
+  cy.enterMuiInput('Code', data.code);
+  cy.enterMuiInput('Name', data.name);
+  cy.chooseMuiSelect('Type', data.packagetype);
+  cy.chooseMuiSelect('Service Type', data.type);
+  cy.chooseMuiSelect('Service Category', data.category);
+  cy.chooseMuiSelect('Service Level', data.level);
+  cy.enterMuiInput('Maximum Amount per Claim', data.maximumAmount ?? '');
+  cy.enterMuiInput('Price', data.price ?? '');
+  cy.chooseMuiSelect('Care Type', data.careType);
+  cy.enterMuiInput('Frequency (days)', data.frequency ?? '');
+};
+
+const verifyServiceDetails = (data, updatedData = null) => {
+  data = updatedData ? { ...data, ...updatedData } : data;
+
+  goToExistingServiceForm(data);
+
+  cy.verifyMuiInputValue('Code', data.code);
+  cy.verifyMuiInputValue('Name', data.name);
+  cy.verifyMuiSelectValue('Type', data.packagetype);
+  cy.verifyMuiSelectValue('Service Type', data.type);
+  cy.verifyMuiSelectValue('Service Category', data.category);
+  cy.verifyMuiSelectValue('Service Level', data.level);
+  cy.verifyMuiInputValue('Maximum Amount per Claim', data.maximumAmount ?? '');
+  cy.verifyMuiInputValue('Price', data.price ?? '');
+  cy.verifyMuiSelectValue('Care Type', data.careType);
+  cy.verifyMuiInputValue('Frequency (days)', data.frequency ?? '');
+};
+
+const verifyServiceRemoved = (data) => {
+  goToServiceList();
+
+  cy.enterMuiInput('Code', data.code, 'input');
+  cy.contains('button', 'Search').click({ force: true });
+
+  cy.get('body').then(($body) => {
+    const exists = $body.find('tr').toArray().some(row =>
+      row.innerText.includes(data.code)
+    );
+
+    expect(exists).to.be.false;
+  });
+};
+
+const deleteService = (data, { failIfMissing = true } = {}) => {
+  goToServiceList();
+
+  cy.enterMuiInput('Code', data.code, 'input');
+  cy.contains('button', 'Search').click({ force: true });
+
+  cy.get('body').then(($body) => {
+    const exists = $body.find('tr').toArray().some(row =>
+      row.innerText.includes(data.code)
+    );
+
+    if (!exists) {
+      if (!failIfMissing) return;
+      throw new Error(`Service ${data.code} not found`);
+    }
+
+    cy.contains('tr', data.code)
+      .within(() => cy.contains('button', 'Delete').click({ force: true }));
+
+    cy.contains('button', 'Yes', { matchCase: false }).click();
+  });
+};
+
+// ------------------ TEST ------------------
 describe('Medical Items & Services Workflow', () => {
+
   afterEach(() => {
     cy.login();
-    Service.delete(service, { failIfMissing: false });
-    Item.delete(item, { failIfMissing: false });
+    deleteService(service, { failIfMissing: false });
+    deleteItem(item, { failIfMissing: false });
   });
 
   it('should execute complete medical flow cleanly', () => {
 
     cy.login();
 
-    // Create item
-    Item.goToForm();
-    Item.fillForm(item);
+    // --- Create item ---
+    goToNewItemForm();
+    fillItemForm(item);
     cy.save();
-    Item.verifyExists(item);
+    verifyItemDetails(item);
 
-    // Create service
-    Service.goToForm();
-    Service.fillForm(service);
+    // --- Create service ---
+    goToNewServiceForm();
+    fillServiceForm(service);
     cy.save();
-    Service.verifyExists(service);
+    verifyServiceDetails(service);
 
-    // Modify item
-    Item.goToForm(item);
+    // --- Update item ---
+    goToExistingItemForm(item);
     cy.enterMuiInput('Frequency (days)', '2x/day');
     cy.save();
+    verifyItemDetails(item, { frequency: '2x/day' });
 
-    // Modify service
-    Service.goToForm(service);
+    // --- Update service ---
+    goToExistingServiceForm(service);
     cy.enterMuiInput('Frequency (days)', '3x/day');
     cy.save();
+    verifyServiceDetails(service, { frequency: '3x/day' });
+
+    // --- Delete item ---
+    deleteItem(item);
+    verifyItemRemoved(item);
+
+    // --- Delete service ---
+    deleteService(service);
+    verifyServiceRemoved(service);
 
   });
 

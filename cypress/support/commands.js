@@ -626,6 +626,17 @@ Cypress.Commands.add('enterMuiInput', (label, value, inputTag='input') => {
     .type(value, {force: true});
 })
 
+Cypress.Commands.add('verifyMuiInputValue', (label, expectedValue, inputTag = 'input') => {
+  cy.contains('label', label, { matchCase: false })
+    .siblings('.MuiInputBase-root')
+    .find(inputTag)
+    .first()
+    .invoke('val')
+    .then((actualValue) => {
+      expect(actualValue.toLowerCase()).to.eq(expectedValue.toLowerCase())
+    })
+})
+
 Cypress.Commands.add('chooseMuiSelect', (label, value) => {
   cy.contains('label', label, { matchCase: false })
     .siblings('.MuiInputBase-root')
@@ -636,6 +647,17 @@ Cypress.Commands.add('chooseMuiSelect', (label, value) => {
     .should('be.visible')
     .click({ force: true });
 })
+
+Cypress.Commands.add('verifyMuiSelectValue', (label, expectedValue) => {
+  cy.contains('label', label, { matchCase: false })
+    .siblings('.MuiInputBase-root')
+    .find('[role="combobox"]')
+    .invoke('text')
+    .then((actualValue) => {
+      expect(actualValue.trim().toLowerCase())
+        .to.eq(expectedValue.toLowerCase());
+    });
+});
 
 Cypress.Commands.add('chooseMuiAutocomplete', (label, value) => {
   cy.contains('label', label, { matchCase: false })
@@ -649,6 +671,17 @@ Cypress.Commands.add('chooseMuiAutocomplete', (label, value) => {
     .contains('li[role="option"], li[role="presentation"], [role="menu"] li', value, { timeout: 10000 })
     .should('be.visible')
     .click();
+});
+
+Cypress.Commands.add('verifyMuiAutocompleteValue', (label, expectedValue) => {
+  cy.contains('label', label, { matchCase: false })
+    .siblings('.MuiInputBase-root')
+    .find('input')
+    .invoke('val')
+    .then((actualValue) => {
+      expect(actualValue.toLowerCase())
+        .to.eq(expectedValue.toLowerCase());
+    });
 });
 
 const yearView = "year view is open, switch to calendar view"
@@ -726,6 +759,17 @@ Cypress.Commands.add('chooseMuiDatePicker', (label, dateOrDay, month, year) => {
     .click();
 })
 
+Cypress.Commands.add('verifyMuiDatePickerValue', (label, expectedValue) => {
+  cy.contains('label', label, { matchCase: false })
+    .siblings('.MuiPickersInputBase-root')
+    .find('input')
+    .invoke('val')
+    .then((actualValue) => {
+      expect(actualValue.toLowerCase())
+        .to.eq(expectedValue.toLowerCase());
+    });
+});
+
 Cypress.Commands.add('save', () => {
   cy.get('[aria-label="Save changes"]')
     .find('button')
@@ -736,14 +780,6 @@ Cypress.Commands.add('save', () => {
 
 Cypress.Commands.add('openRow', (value) => {
   cy.contains(value, { matchCase: false }).parents('tr').first().dblclick({force: true});
-});
-
-Cypress.Commands.add('clickButtonByText', (text, options = {}) => {
-  const { force = true, ...containsOptions } = options;
-
-  cy.contains('button', text, { matchCase: false, ...containsOptions })
-    .should('be.visible')
-    .click({ force });
 });
 
 Cypress.Commands.add('assertMuiInput', (label, value, inputTag='input') => {
