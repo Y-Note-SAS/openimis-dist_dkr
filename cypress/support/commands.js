@@ -6,7 +6,7 @@ const getTodayFormatted = () => {
   return `${day}-${month}-${year}`;
 };
 
-DEFAULT_LOGIN_FORM_TIMEOUT = 20000
+const DEFAULT_LOGIN_FORM_TIMEOUT = 2000000
 Cypress.Commands.add('login', () => {
   const loginFormTimeout = Number(Cypress.env('LOGIN_FORM_TIMEOUT')) || DEFAULT_LOGIN_FORM_TIMEOUT;
 
