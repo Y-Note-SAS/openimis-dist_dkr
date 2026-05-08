@@ -1,0 +1,160 @@
+#version: "3.7"
+x-api: &default-api
+  build:
+    context: ../openimis-be_py/
+  #image: openimis/backend:csu-dev
+  volumes:
+    - ../openimis-be_py:/openimis-be
+    - ../openimis-be-cs_py:/openimis-be-cs_py
+    - ../openimis-be-csu_py:/openimis-be-csu_py
+    - ../openimis-be-report-csu_py:/openimis-be-report-csu_py
+    - ../openimis-be-report-cs_py:/openimis-be-report-cs_py
+    - ../openimis-be-program_py:/openimis-be-program_py
+    #- ../openimis-be-idps_py:/openimis-be-idps_py
+    - photos:/openimis-be/openIMIS/images/insurees
+  environment:
+    - DB_HOST=${DB_HOST}
+    - DB_PORT=${DB_PORT}
+    - DB_NAME=${DB_NAME}
+    - DB_USER=${DB_USER}
+    - DB_PASSWORD=${DB_PASSWORD}
+    - SITE_ROOT=api
+    - SITE_URL=${DOMAIN}
+    - CELERY_BROKER_URL=amqp://rabbitmq
+    - DB_ENGINE=${DB_ENGINE}
+    - DJANGO_LOG_LEVEL=${DJANGO_LOG_LEVEL:-WARNING}
+    - DJANGO_LOG_HANDLER=${DJANGO_LOG_HANDLER:-console}
+    - DJANGO_DB_LOG_HANDLER=${DJANGO_DB_LOG_HANDLER:-db-queries}
+    - DEBUG=${DEBUG:-False}
+    - DJANGO_MIGRATE=${DJANGO_MIGRATE:-True}
+    - SCHEDULER_AUTOSTART=${SCHEDULER_AUTOSTART:-True}
+    - MODE=${MODE:-Prod}
+  networks:
+    openimis-net-dev:
+  restart: always
+
+services:
+  frontend:
+    build:
+      context: ../openimis-fe_js/
+      target: dev-stage
+    restart: always
+    working_dir: /workspace/openimis-fe_js
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    container_name: ${PROJECT_NAME:-test-csu}-frontend
+    environment:
+      - PORT=${FE_PORT:-3000}
+      - REACT_APP_API_URL=api
+      - NEW_OPENIMIS_HOST=${NEW_OPENIMIS_HOST}
+      - OPENIMIS_CONF_JSON=${OPENIMIS_FE_CONF_JSON}
+      - OPENSEARCH_BASIC_TOKEN=${OPENSEARCH_BASIC_TOKEN}
+    networks:
+      openimis-net-dev:
+    ports:
+      - ${FE_PORT:-3000}:${FE_PORT:-3000}
+    depends_on:
+      - backend
+    volumes:
+      - ../../openimis-csu:/workspace
+  backend:
+    <<: *default-api
+    container_name: ${PROJECT_NAME:-openimis}-api
+    command: start_wsgi
+  worker:
+    <<: *default-api
+    container_name: ${PROJECT_NAME:-openimis}-worker
+    command: worker
+  rabbitmq:
+    container_name: ${PROJECT_NAME:-openimis}-rabbitmq
+    image: rabbitmq:3-management
+    restart: always
+    networks:
+      openimis-net-dev:
+
+  # Services Sentry
+  redis:
+    image: redis
+    platform: linux/amd64  # <-- Ajoutez cette ligne
+    networks:
+      openimis-net-dev:
+
+  postgres:
+    image: postgres
+    platform: linux/amd64  # <-- Ajoutez cette ligne
+    environment:
+      POSTGRES_USER: sentry
+      POSTGRES_PASSWORD: sentry
+      POSTGRES_DB: sentry
+    volumes:
+      - pgdb:/var/lib/postgresql/data
+    networks:
+      openimis-net-dev:
+
+  sentry:
+    image: sentry
+    platform: linux/amd64  # <-- Ajoutez cette ligne
+    links:
+      - redis
+      - postgres
+    ports:
+      - 9000:9000
+    environment:
+      SENTRY_SECRET_KEY: 'hMuRRIQR37WLMGzGyC3fCXUei5ff5Swy5qYmIAGEnbY='
+      SENTRY_POSTGRES_HOST: postgres
+      SENTRY_DB_USER: sentry
+      SENTRY_DB_PASSWORD: =E=QY]!{PjD53Mq
+      SENTRY_REDIS_HOST: redis
+    command: >
+      bash -c "sleep 10 && 
+      sentry upgrade --noinput && 
+      sentry createuser --superuser --email admin@example.com --password password && 
+      sentry run web"
+    networks:
+      openimis-net-dev:
+
+  cron:
+    image: sentry
+    platform: linux/amd64  # <-- Ajoutez cette ligne
+    links:
+      - redis
+      - postgres
+    command: "sentry run cron"
+    environment:
+      SENTRY_SECRET_KEY: 'hMuRRIQR37WLMGzGyC3fCXUei5ff5Swy5qYmIAGEnbY='
+      SENTRY_POSTGRES_HOST: postgres
+      SENTRY_DB_USER: sentry
+      SENTRY_DB_PASSWORD: =E=QY]!{PjD53Mq
+      SENTRY_REDIS_HOST: redis
+    networks:
+      openimis-net-dev:
+
+  sentry-worker:
+    image: sentry
+    platform: linux/amd64  # <-- Ajoutez cette ligne
+    links:
+      - redis
+      - postgres
+    command: "sentry run worker"
+    environment:
+      SENTRY_SECRET_KEY: 'hMuRRIQR37WLMGzGyC3fCXUei5ff5Swy5qYmIAGEnbY='
+      SENTRY_POSTGRES_HOST: postgres
+      SENTRY_DB_USER: sentry
+      SENTRY_DB_PASSWORD: =E=QY]!{PjD53Mq
+      SENTRY_REDIS_HOST: redis
+    networks:
+      openimis-net-dev:
+
+networks:
+  openimis-net-dev:
+    # name: ${PROJECT_NAME}-openimis-net
+    name: csu-${SERVER_ENV:-dev}-openimis-net
+    ipam:
+      config:
+        - subnet: 172.100.${IP_SUB:-20}.0/24
+          ip_range: 172.100.${IP_SUB:-20}.0/24
+
+volumes:
+  database-csu:
+  photos:
+  pgdb:

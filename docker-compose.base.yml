@@ -34,6 +34,33 @@ x-api: &default-api
   restart: always
 
 services:
+  frontend:
+    container_name: ${PROJECT_NAME:-csu-live}-frontend
+    build:
+      context: ../openimis-fe_js/
+      args:
+        OPENIMIS_CONF_JSON: ${OPENIMIS_FE_CONF_JSON}
+    #image: openimis/frontend:${PROJECT_NAME:-local}
+    restart: always
+    environment:
+      - REACT_APP_API_URL=api
+      - NEW_OPENIMIS_HOST=${DOMAIN}
+      - OPENIMIS_CONF_JSON=${OPENIMIS_FE_CONF_JSON}
+      - OPENSEARCH_BASIC_TOKEN=${OPENSEARCH_BASIC_TOKEN}
+      - PUBLIC_URL=${PUBLIC_URL:-front}
+    networks:
+      openimis-net-dev:
+    ports:
+      - ${HTTP_PORT:-80}:80
+      - ${HTTPS_PORT:-443}:443
+    depends_on:
+      - backend
+    volumes:
+      - ./data/certbot/conf:/etc/letsencrypt
+      - ./data/certbot/www:/var/www/certbot
+      - ../openimis-fe_js/script/entrypoint.sh:/script/entrypoint.sh
+      # uncomment to use custom openimis.conf
+      - ./conf/nginx:/conf/
   backend:
     <<: *default-api
     container_name: ${PROJECT_NAME:-openimis}-api
