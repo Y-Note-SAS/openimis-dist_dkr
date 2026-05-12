@@ -3,80 +3,106 @@ x-api: &default-api
   build:
     context: ../openimis-be_py/
   #image: openimis/backend:csu-dev
+    args:
+      - PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple
+  init: true
   volumes:
     - ../openimis-be_py:/openimis-be
+    - ../openimis-be-core_py:/openimis-be-core_py
+    - ../openimis-be-claim_py:/openimis-be-claim_py
+    - ../openimis-be-location_py:/openimis-be-location_py
     - ../openimis-be-cs_py:/openimis-be-cs_py
     - ../openimis-be-csu_py:/openimis-be-csu_py
     - ../openimis-be-report-csu_py:/openimis-be-report-csu_py
     - ../openimis-be-report-cs_py:/openimis-be-report-cs_py
     - ../openimis-be-program_py:/openimis-be-program_py
+    - ../openimis-be-policy_py:/openimis-be-policy_py
+    - ../database_postgresql:/database_postgresql 
     #- ../openimis-be-idps_py:/openimis-be-idps_py
     - photos:/openimis-be/openIMIS/images/insurees
   environment:
-    - DB_HOST=${DB_HOST}
-    - DB_PORT=${DB_PORT}
-    - DB_NAME=${DB_NAME}
-    - DB_USER=${DB_USER}
-    - DB_PASSWORD=${DB_PASSWORD}
+    - DB_USER=${POSTGRES_DB_USER}
+    - DB_HOST=${POSTGRES_DB_HOST}
+    - DB_PORT=${POSTGRES_DB_PORT}
+    - DB_NAME=${POSTGRES_DB_NAME}
+    - DB_PASSWORD=${POSTGRES_DB_PASSWORD}
+    - DB_ENGINE=${POSTGRES_DB_ENGINE}
+    - PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple
+    - PIP_TRUSTED_HOST=pypi.tuna.tsinghua.edu.cn
     - SITE_ROOT=api
-    - SITE_URL=${DOMAIN}
-    - CELERY_BROKER_URL=amqp://rabbitmq
-    - DB_ENGINE=${DB_ENGINE}
-    - DJANGO_LOG_LEVEL=${DJANGO_LOG_LEVEL:-WARNING}
-    - DJANGO_LOG_HANDLER=${DJANGO_LOG_HANDLER:-console}
-    - DJANGO_DB_LOG_HANDLER=${DJANGO_DB_LOG_HANDLER:-db-queries}
-    - DEBUG=${DEBUG:-False}
-    - DJANGO_MIGRATE=${DJANGO_MIGRATE:-True}
-    - SCHEDULER_AUTOSTART=${SCHEDULER_AUTOSTART:-True}
-    - MODE=${MODE:-Prod}
+    - SITE_URL=${SITE_URL}
+    - CELERY_BROKER_URL=amqp://rabbitmq-test
+    - DJANGO_LOG_LEVEL=WARNING
+    - DJANGO_LOG_HANDLER=console
+    - DJANGO_DB_LOG_HANDLER=db-queries
+    - DEBUG=False
+    - CACHE_BACKEND=${CACHE_BACKEND}
+    - CACHE_URL=${CACHE_URL}
+    - CACHE_OPTIONS=${CACHE_OPTIONS}
+    - DJANGO_MIGRATE=True
+    - SCHEDULER_AUTOSTART=True
+    - MODE=Prod
+    - SENTRY_DSN=${SENTRY_DSN}
   networks:
-    openimis-net-dev:
+    openimis-net-test:
   restart: always
 
 services:
-  frontend:
+  frontend-test:
+    container_name: openimis-frontend
     build:
       context: ../openimis-fe_js/
+      args:
+        OPENIMIS_CONF_JSON: 
     restart: always
     environment:
-      - REACT_APP_API_URL=api
+      - REACT_APP_API_URL=${REACT_APP_API_URL:-api}
       - NEW_OPENIMIS_HOST=${NEW_OPENIMIS_HOST}
-      - OPENIMIS_CONF_JSON=${OPENIMIS_FE_CONF_JSON}
-      - OPENSEARCH_BASIC_TOKEN=${OPENSEARCH_BASIC_TOKEN}
+      - OPENIMIS_CONF_JSON=${OPENIMIS_CONF_JSON:-}
+      - OPENSEARCH_BASIC_TOKEN=${OPENSEARCH_BASIC_TOKEN:-}
+      - PUBLIC_URL=${PUBLIC_URL:-front}
+      - DATA_UPLOAD_MAX_MEMORY_SIZE=${DATA_UPLOAD_MAX_MEMORY_SIZE:-12582912}
+      - FORCE_RELOAD=${FORCE_RELOAD:-0}
     networks:
-      openimis-net-dev:
+      openimis-net-test:
     ports:
       - ${HTTP_PORT:-80}:80
       - ${HTTPS_PORT:-443}:443
     depends_on:
-      - backend
+      - backend-test
     volumes:
       - ./data/certbot/conf:/etc/letsencrypt
       - ./data/certbot/www:/var/www/certbot
-      # uncomment to use custom openimis.conf
+      - ../openimis-fe_js/script/entrypoint.sh:/script/entrypoint.sh
       - ./conf/nginx:/conf/
-  backend:
+
+  backend-test:
     <<: *default-api
-    container_name: ${PROJECT_NAME:-openimis}-api
+    container_name: openimis-api
     command: start_wsgi
-  worker:
+    ports:
+      - 8002:8000
+
+  worker-test:
     <<: *default-api
-    container_name: ${PROJECT_NAME:-openimis}-worker
+    container_name: openimis-worker
     command: worker
-  rabbitmq:
-    container_name: ${PROJECT_NAME:-openimis}-rabbitmq
+
+  rabbitmq-test:
+    container_name: openimis-rabbitmq
     image: rabbitmq:3-management
     restart: always
     networks:
-      openimis-net-dev:
+      openimis-net-test:
+
 networks:
-  openimis-net-dev:
-    # name: ${PROJECT_NAME}-openimis-net
-    name: csu-${SERVER_ENV:-dev}-openimis-net
+  openimis-net-test:
+    name: csu-dev-openimis-net
     ipam:
       config:
-        - subnet: 172.100.${IP_SUB:-20}.0/24
-          ip_range: 172.100.${IP_SUB:-20}.0/24
+        - subnet: 172.100.20.0/24
+          ip_range: 172.100.20.0/24
+
 volumes:
   database-csu:
   photos:
